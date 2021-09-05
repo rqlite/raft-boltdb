@@ -266,3 +266,31 @@ func (b *BoltStore) GetUint64(key []byte) (uint64, error) {
 func (b *BoltStore) Sync() error {
 	return b.conn.Sync()
 }
+
+// Stats is the statistics for the BoltDB store.
+type Stats struct {
+	// Freelist stats
+	FreePageN     int `json:"num_free_pages"`    // total number of free pages on the freelist
+	PendingPageN  int `json:"num_pending_pages"` // total number of pending pages on the freelist
+	FreeAlloc     int `json:"free_alloc"`        // total bytes allocated in free pages
+	FreelistInuse int `json:"free_list_inuse"`   // total bytes used by the freelist
+
+	// Transaction stats
+	TxN     int `json:"num_tx_read"` // total number of started read transactions
+	OpenTxN int `json:"num_tx_open"` // number of currently open read transactions
+
+	//TxStats TxStats // global, ongoing stats.
+}
+
+// Stats returns the BoltStore statistics.
+func (b *BoltStore) Stats() Stats {
+	stats := b.conn.Stats()
+	return Stats{
+		FreePageN:     stats.FreePageN,
+		PendingPageN:  stats.PendingPageN,
+		FreeAlloc:     stats.FreeAlloc,
+		FreelistInuse: stats.FreelistInuse,
+		TxN:           stats.TxN,
+		OpenTxN:       stats.OpenTxN,
+	}
+}
