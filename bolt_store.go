@@ -2,6 +2,7 @@ package raftboltdb
 
 import (
 	"errors"
+	"time"
 
 	"github.com/boltdb/bolt"
 	"github.com/hashicorp/raft"
@@ -267,6 +268,32 @@ func (b *BoltStore) Sync() error {
 	return b.conn.Sync()
 }
 
+type TxStats struct {
+	// Page statistics.
+	PageCount int `json:"page_count"` // number of page allocations
+	PageAlloc int `json:"page_alloc"` // total bytes allocated
+
+	// Cursor statistics.
+	CursorCount int `json:"cursor_count"` // number of cursors created
+
+	// Node statistics
+	NodeCount int `json:"node_count"` // number of node allocations
+	NodeDeref int `json:"node_deref"` // number of node dereferences
+
+	// Rebalance statistics.
+	Rebalance     int           `json:"rebalance"`      // number of node rebalances
+	RebalanceTime time.Duration `json:"rebalance_time"` // total time spent rebalancing
+
+	// Split/Spill statistics.
+	Split     int           `json:split`        // number of nodes split
+	Spill     int           `json:"spill"`      // number of nodes spilled
+	SpillTime time.Duration `json:"spill_time"` // total time spent spilling
+
+	// Write statistics.
+	Write     int           `json:"write"`      // number of writes performed
+	WriteTime time.Duration `json:"write_time"` // total time spent writing to disk
+}
+
 // Stats is the statistics for the BoltDB store.
 type Stats struct {
 	// Freelist stats
@@ -279,12 +306,27 @@ type Stats struct {
 	TxN     int `json:"num_tx_read"` // total number of started read transactions
 	OpenTxN int `json:"num_tx_open"` // number of currently open read transactions
 
-	//TxStats TxStats // global, ongoing stats.
+	TxStats TxStats `json:"tx_stats"` // global, ongoing stats.
 }
 
 // Stats returns the BoltStore statistics.
 func (b *BoltStore) Stats() Stats {
 	stats := b.conn.Stats()
+
+	txStats := TxStats{
+		PageCount:     stats.TxStats.PageCount,
+		PageAlloc:     stats.TxStats.PageAlloc,
+		CursorCount:   stats.TxStats.CursorCount,
+		NodeCount:     stats.TxStats.NodeCount,
+		NodeDeref:     stats.TxStats.NodeDeref,
+		Rebalance:     stats.TxStats.Rebalance,
+		RebalanceTime: stats.TxStats.RebalanceTime,
+		Split:         stats.TxStats.Split,
+		Spill:         stats.TxStats.Spill,
+		SpillTime:     stats.TxStats.SpillTime,
+		Write:         stats.TxStats.Write,
+		WriteTime:     stats.TxStats.WriteTime,
+	}
 	return Stats{
 		FreePageN:     stats.FreePageN,
 		PendingPageN:  stats.PendingPageN,
@@ -292,5 +334,6 @@ func (b *BoltStore) Stats() Stats {
 		FreelistInuse: stats.FreelistInuse,
 		TxN:           stats.TxN,
 		OpenTxN:       stats.OpenTxN,
+		TxStats:       txStats,
 	}
 }
