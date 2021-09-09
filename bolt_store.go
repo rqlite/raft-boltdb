@@ -285,7 +285,7 @@ type TxStats struct {
 	RebalanceTime time.Duration `json:"rebalance_time"` // total time spent rebalancing
 
 	// Split/Spill statistics.
-	Split     int           `json:split`        // number of nodes split
+	Split     int           `json:"split"`      // number of nodes split
 	Spill     int           `json:"spill"`      // number of nodes spilled
 	SpillTime time.Duration `json:"spill_time"` // total time spent spilling
 
